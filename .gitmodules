@@ -1,0 +1,3 @@
+[submodule "wisp"]
+	path = wisp
+	url = git@github.com:takeiteasy/wisp.git
