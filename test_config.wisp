@@ -1,8 +1,8 @@
 ;; Editor config - loaded on startup
 
-(def km (require "maclisp/KeyMap"))
-(def ed (require "maclisp/Editor"))
-(def hooks (require "maclisp/Hooks"))
+(def km (require "macos/KeyMap"))
+(def ed (require "macos/Editor"))
+(def hooks (require "macos/Hooks"))
 
 (km.bind "M-f" ed.forwardSexp)
 (km.bind "M-b" ed.backwardSexp)

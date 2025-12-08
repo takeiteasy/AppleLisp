@@ -1,6 +1,6 @@
 import Foundation
 import CNcurses
-import MacLisp
+import AppleLisp
 
 /// Simple ncurses-based text editor with Wisp syntax highlighting
 public class Editor {

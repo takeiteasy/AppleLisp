@@ -1,7 +1,7 @@
 import JavaScriptCore
 import Foundation
 
-public class MacLisp {
+public class AppleLisp {
     public let jsContext: JSContext
     private var context: JSContext { jsContext }  // Backward compat alias
     private let wispCompile: JSValue
@@ -10,6 +10,9 @@ public class MacLisp {
     
     public enum NativeAPI: String, CaseIterable {
         case FileManager
+        case Process
+        case UserDefaults
+        case Workspace
     }
     
     public enum Error: Swift.Error, LocalizedError {
@@ -76,7 +79,7 @@ public class MacLisp {
     @discardableResult
     public func loadAPI(_ api: NativeAPI) -> JSValue {
         if loadedAPIs.contains(api) {
-            return context.objectForKeyedSubscript("__maclisp_apis")!
+            return context.objectForKeyedSubscript("__macos_apis")!
                 .objectForKeyedSubscript(api.rawValue)!
         }
         
@@ -84,10 +87,16 @@ public class MacLisp {
         switch api {
         case .FileManager:
             jsValue = FileManagerAPI.install(in: context)
+        case .Process:
+            jsValue = ProcessAPI.install(in: context)
+        case .UserDefaults:
+            jsValue = UserDefaultsAPI.install(in: context)
+        case .Workspace:
+            jsValue = WorkspaceAPI.install(in: context)
         }
         
-        // Store in __maclisp_apis cache
-        let apis = context.objectForKeyedSubscript("__maclisp_apis")!
+        // Store in __macos_apis cache
+        let apis = context.objectForKeyedSubscript("__macos_apis")!
         apis.setObject(jsValue, forKeyedSubscript: api.rawValue as NSString)
         
         loadedAPIs.insert(api)
@@ -97,7 +106,7 @@ public class MacLisp {
     /// Register a custom API from external code (e.g., repl target)
     @discardableResult
     public func registerCustomAPI(name: String, value: JSValue) -> JSValue {
-        let apis = context.objectForKeyedSubscript("__maclisp_apis")!
+        let apis = context.objectForKeyedSubscript("__macos_apis")!
         apis.setObject(value, forKeyedSubscript: name as NSString)
         customAPIs.insert(name)
         return value
@@ -176,7 +185,7 @@ public class MacLisp {
         for (var key in string) { this[key] = string[key]; }
         
         var exports = {};
-        var __maclisp_apis = {};
+        var __macos_apis = {};
         """
         context.evaluateScript(setupScript)
     }
@@ -187,7 +196,7 @@ public class MacLisp {
             guard let self = self else { return nil }
             
             // First check if it's a custom-registered API
-            let apis = self.context.objectForKeyedSubscript("__maclisp_apis")!
+            let apis = self.context.objectForKeyedSubscript("__macos_apis")!
             if let customAPI = apis.objectForKeyedSubscript(name), !customAPI.isUndefined, !customAPI.isNull {
                 return customAPI
             }
@@ -201,16 +210,16 @@ public class MacLisp {
         }
         
         context.setObject(unsafeBitCast(requireNative, to: AnyObject.self),
-                          forKeyedSubscript: "__maclisp_require" as NSString)
+                          forKeyedSubscript: "__macos_require" as NSString)
         
-        // Override require to intercept maclisp/* imports
+        // Override require to intercept macos/* imports
         let requireHook = """
         (function() {
             var _originalRequire = typeof require !== 'undefined' ? require : null;
             require = function(name) {
-                if (typeof name === 'string' && name.indexOf('maclisp/') === 0) {
+                if (typeof name === 'string' && name.indexOf('macos/') === 0) {
                     var apiName = name.substring(8);
-                    var api = __maclisp_require(apiName);
+                    var api = __macos_require(apiName);
                     if (!api) {
                         throw new Error('Unknown native API: ' + apiName);
                     }

@@ -1,4 +1,4 @@
-import MacLisp
+import AppleLisp
 import Foundation
 import CEditline
 import ArgumentParser
@@ -6,10 +6,10 @@ import ArgumentParser
 // MARK: - CLI
 
 @main
-struct MacLispCLI: ParsableCommand {
+struct AppleLispCLI: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "repl",
-        abstract: "MacLisp - Wisp Lisp on JavaScriptCore",
+        abstract: "AppleLisp - Wisp Lisp on JavaScriptCore",
         version: "0.1.0"
     )
     
@@ -29,11 +29,11 @@ struct MacLispCLI: ParsableCommand {
     var config: String?
     
     mutating func run() throws {
-        let lisp: MacLisp
+        let lisp: AppleLisp
         do {
-            lisp = try MacLisp()
+            lisp = try AppleLisp()
         } catch {
-            fputs("Error: Failed to initialize MacLisp: \(error.localizedDescription)\n", stderr)
+            fputs("Error: Failed to initialize AppleLisp: \(error.localizedDescription)\n", stderr)
             throw ExitCode.failure
         }
         
@@ -96,7 +96,7 @@ struct MacLispCLI: ParsableCommand {
             EditorCallbacks.getCurrentLine = { editor.currentLinePublic }
             EditorCallbacks.setStatusMessage = { editor.setStatusMessagePublic($0) }
             
-            // Register APIs with MacLisp context
+            // Register APIs with AppleLisp context
             lisp.registerCustomAPI(name: "KeyMap", value: KeyMapAPI.install(in: lisp.jsContext))
             lisp.registerCustomAPI(name: "Editor", value: EditorAPI.install(in: lisp.jsContext))
             lisp.registerCustomAPI(name: "Hooks", value: HooksAPI.install(in: lisp.jsContext))
@@ -183,7 +183,7 @@ enum REPL {
     }
     
     static func printBanner() {
-        print("MacLisp REPL")
+        print("AppleLisp REPL")
         print("Type :help for commands, :quit to exit")
         print("")
     }
@@ -205,7 +205,7 @@ enum REPL {
         """)
     }
     
-    static func run(lisp: MacLisp) {
+    static func run(lisp: AppleLisp) {
         printBanner()
         loadHistory()
         
@@ -279,8 +279,8 @@ enum REPL {
 
 // MARK: - Config Loading
 
-extension MacLispCLI {
-    func loadConfig(lisp: MacLisp) {
+extension AppleLispCLI {
+    func loadConfig(lisp: AppleLisp) {
         let fm = FileManager.default
         var configPath: String?
         

@@ -2,14 +2,14 @@
 import PackageDescription
 
 let package = Package(
-    name: "MacLisp",
+    name: "AppleLisp",
     platforms: [
         .macOS(.v12)
     ],
     products: [
         .library(
-            name: "MacLisp",
-            targets: ["MacLisp"]
+            name: "AppleLisp",
+            targets: ["AppleLisp"]
         ),
         .executable(
             name: "repl",
@@ -21,7 +21,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "MacLisp",
+            name: "AppleLisp",
             resources: [
                 .copy("Resources/wisp_jsc.js")
             ]
@@ -29,7 +29,7 @@ let package = Package(
         .executableTarget(
             name: "repl",
             dependencies: [
-                "MacLisp",
+                "AppleLisp",
                 "CEditline",
                 "CNcurses",
                 .product(name: "ArgumentParser", package: "swift-argument-parser")
