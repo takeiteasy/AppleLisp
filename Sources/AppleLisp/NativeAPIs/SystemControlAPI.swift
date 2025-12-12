@@ -1,8 +1,13 @@
 import JavaScriptCore
 import AppKit
+import Foundation
 
 public struct SystemControlAPI: NativeAPIProvider {
-    public static var apiName: String { "SystemControl" }    
+    public static var apiName: String { "SystemControl" }
+    
+    // Store power assertions (caffeinate PIDs)
+    private static var powerAssertions: [String: Int32] = [:]
+    
     public static func install(in context: JSContext) -> JSValue {
         let api = JSValue(newObjectIn: context)!
         
@@ -62,6 +67,59 @@ public struct SystemControlAPI: NativeAPIProvider {
         api.setObject(unsafeBitCast(toggleMute, to: AnyObject.self),
                       forKeyedSubscript: "toggleMute" as NSString)
         
+                // preventSleep(reason?) -> String (Assertion ID)
+                let preventSleep: @convention(block) (String?) -> String = { reason in
+                    let task = Process()
+                    task.executableURL = URL(fileURLWithPath: "/usr/bin/caffeinate")
+                    // -i: prevent idle sleep, -d: prevent display sleep
+                    task.arguments = ["-i", "-d"]
+                    
+                    // Redirect output to avoid hanging test runners
+                    task.standardOutput = FileHandle.nullDevice
+                    task.standardError = FileHandle.nullDevice
+                    
+                    do {
+                        try task.run()
+                        let id = UUID().uuidString
+                        SystemControlAPI.powerAssertions[id] = task.processIdentifier
+                        return id
+                    } catch {
+                return "0"
+            }
+        }
+        api.setObject(unsafeBitCast(preventSleep, to: AnyObject.self),
+                      forKeyedSubscript: "preventSleep" as NSString)
+        
+        // allowSleep(id) -> Bool
+        let allowSleep: @convention(block) (String) -> Bool = { id in
+            guard let pid = SystemControlAPI.powerAssertions[id] else { return false }
+            let result = kill(pid, SIGTERM)
+            if result == 0 {
+                SystemControlAPI.powerAssertions.removeValue(forKey: id)
+                return true
+            }
+            return false
+        }
+        api.setObject(unsafeBitCast(allowSleep, to: AnyObject.self),
+                      forKeyedSubscript: "allowSleep" as NSString)
+        
+        // setWiFi(enabled) -> Bool
+        let setWiFi: @convention(block) (Bool) -> Bool = { enabled in
+            // Try en0 and en1
+            let state = enabled ? "on" : "off"
+            for interface in ["en0", "en1"] {
+                let task = Process()
+                task.executableURL = URL(fileURLWithPath: "/usr/sbin/networksetup")
+                task.arguments = ["-setairportpower", interface, state]
+                try? task.run()
+                task.waitUntilExit()
+                if task.terminationStatus == 0 { return true }
+            }
+            return false
+        }
+        api.setObject(unsafeBitCast(setWiFi, to: AnyObject.self),
+                      forKeyedSubscript: "setWiFi" as NSString)
+
         return api
     }
 }

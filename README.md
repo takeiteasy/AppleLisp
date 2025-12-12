@@ -40,9 +40,9 @@ Control other applications using Apple's ScriptingBridge.
     (do
       (.activate safari)
       ;; Access properties dynamically
-      (let [doc (first (.property safari "documents"))]
+      (let [doc (first (get safari "documents"))]
         (if doc
-          (print (.property doc "URL")))))))
+          (print (get doc "URL")))))))
 ```
 
 ### Notification
@@ -55,8 +55,19 @@ Send local notifications.
 ;; Request permission
 (.requestPermission notify)
 
-;; Send a notification
+;; Set delegate to handle actions
+(.setDelegate notify (fn [action id]
+  (print (str "Action: " action " on notification: " id))))
+
+;; Send a simple notification
 (.send notify "Task Done" "The background process has finished." "Success")
+
+;; Send notification with options (attachments, actions)
+(let [opts { "subtitle" "Check it out"
+             "attachments" ["/path/to/image.png"]
+             "actions" [{ "id" "view" "title" "View Image" }
+                        { "id" "ignore" "title" "Ignore" }] }]
+  (.send notify "New Image" "You have a new image." opts))
 ```
 
 ### UIAutomation
@@ -70,14 +81,21 @@ Automate user interface interactions (Accessibility API).
 (def sys (.system ax))
 
 ;; Inspect element
-(print (.role sys))
+(print (get sys "role"))
+
+;; List available actions and attributes
+(print (.actions sys))
+(print (.attributes sys))
+
+;; Wait for a condition (e.g. wait for a window to appear)
+;; (.waitFor sys "AXRole" "AXWindow" 5.0)
 
 ;; Find element at specific screen coordinates
 (let [el (.elementAt ax 100 100)]
   (if el
     (do
-      (print (.role el))
-      (print (.title el))
+      (print (get el "role"))
+      (print (get el "title"))
       ;; (.perform el "AXPress")
       )))
 ```
@@ -94,6 +112,16 @@ List and manipulate windows.
   (map (fn [win] 
          (print (get win "app") ":" (get win "title"))) 
        windows))
+
+;; Control Applications/Windows by PID
+(let [pid 12345]
+  (.focus wm pid)
+  (.minimize wm pid))
+
+;; Snapshot a window (returns Base64 PNG)
+;; Pass 0 for screen capture
+(let [b64 (.snapshot wm 0)]
+  (print (count b64)))
 
 ;; Resize a window (pid, x, y, w, h)
 ;; Finds the main window of the application with given PID
@@ -115,6 +143,16 @@ Control system volume and power.
 (.toggleMute sys)
 
 ;; Power management
+(let [id (.preventSleep sys "Downloading huge file")]
+  (print (str "Preventing sleep with ID: " id))
+  ;; Do work...
+  (.allowSleep sys id))
+
+;; WiFi control
+(.setWiFi sys false) ;; Turn off
+(.setWiFi sys true)  ;; Turn on
+
+;; System Power
 ;; (.sleep sys)
 ;; (.restart sys)
 ;; (.shutdown sys)
@@ -137,7 +175,17 @@ Simulate keyboard and mouse events.
 (.mouseClick input 500 500 "right")
 
 ;; Get mouse position
-(print (.getMousePosition input))
+(print (get (.getMousePosition input) "x"))
+(print (get (.getMousePosition input) "y"))
+
+;; Type a string (handles unicode)
+(.typeString input "Hello World! 🌍")
+
+;; Scroll (Y delta, X delta)
+(.scrollInput input 10 0)
+
+;; Delay/Wait (seconds)
+(.delayInput input 0.5)
 
 ;; Press a key (e.g., 'a' is 0, 's' is 1)
 ;; (.keyPress input 0)
@@ -153,13 +201,30 @@ Manage the system clipboard.
 ```clojure
 (def clip (require "macos/Clipboard"))
 
-;; Set clipboard text
+;; Set clipboard text (default general board, plain text)
 (.setString clip "Hello from AppleLisp!")
 
-;; Get clipboard text
+;; Set text with specific type
+(.setString clip "<b>Hello</b>" "public.html")
+
+;; Get text (plain text by default)
 (print (.getString clip))
 
-;; Clear clipboard
+;; Get text of specific type
+(print (.getString clip "public.html"))
+
+;; Base64 Data
+(let [b64 (.getData clip "public.html")]
+  (print b64))
+
+;; Named Pasteboard
+(.setString clip "Secret" nil "my-secret-board")
+(print (.getString clip nil "my-secret-board"))
+
+;; Check available types
+(print (.getTypes clip))
+
+;; Clear
 (.clear clip)
 ```
 
@@ -229,6 +294,26 @@ Interact with the file system.
 (let [files (.listDirectory fm "/Applications")]
   (print files))
 
+;; File Attributes (size, permissions, etc.)
+(let [attrs (.getAttributes fm "/tmp/hello.txt")]
+  (if attrs
+    (do
+      (print (get attrs "size"))
+      (print (get attrs "permissions")))))
+
+;; Change Permissions (chmod)
+(.setPermissions fm "/tmp/hello.txt" 511) ;; 0o777
+
+;; Globbing (wildcard search)
+;; Recursively find all swift files
+(let [swiftFiles (.glob fm "**/*.swift")]
+  (print (count swiftFiles)))
+
+;; Extended Attributes (xattr)
+(.setXAttr fm "/tmp/hello.txt" "com.myapp.tag" "important")
+(print (.getXAttr fm "/tmp/hello.txt" "com.myapp.tag"))
+(.removeXAttr fm "/tmp/hello.txt" "com.myapp.tag")
+
 ;; Get home directory
 (print (.homeDirectory fm))
 ```
@@ -249,11 +334,20 @@ Access process information and execute commands.
 ;; Get PID
 (print (.pid proc))
 
-;; Execute a command
+;; Execute a command (blocking)
 (let [result (.exec proc "/bin/ls" ["-la"])]
   (print (get result "stdout"))
   (print (get result "stderr"))
   (print (get result "status")))
+
+;; Spawn a background process (non-blocking)
+(let [pid (.spawn proc "/bin/sleep" ["10"])]
+  (print (str "Spawned PID: " pid))
+  ;; Kill the process
+  (.kill proc pid))
+
+;; Launch an application
+(.launchApp proc "com.apple.Safari" { "newInstance" true "hide" true })
 
 ;; Exit
 ;; (.exit proc 0)
@@ -298,6 +392,19 @@ Interact with the macOS workspace (launching apps, opening files).
 
 ;; Select file in Finder
 (.selectFile ws "/Applications/Safari.app")
+
+;; Get file icon (Base64 PNG)
+(let [icon (.fileIcon ws "/Applications/Safari.app")]
+  (print (count icon)))
+
+;; Get default app for a file
+(print (.defaultApp ws "/path/to/document.pdf"))
+
+;; Set default app for file extension (e.g., make VSCode open .txt)
+(.setDefaultApp ws "txt" "/Applications/Visual Studio Code.app")
+
+;; Move to Trash
+(.moveToTrash ws "/tmp/garbage.txt")
 
 ;; Find full path for application
 (print (.fullPath ws "Terminal"))

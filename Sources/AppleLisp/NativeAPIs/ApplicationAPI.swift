@@ -1,44 +1,81 @@
 import JavaScriptCore
 import ScriptingBridge
 
-@objc protocol SBWrapperExports: JSExport {
+@objc protocol SBObjectWrapperExports: JSExport {
+    func property(_ key: String) -> Any?
+    func setProperty(_ key: String, _ value: Any)
+    
+    // Support for app["prop"]
+    func objectForKeyedSubscript(_ key: String) -> Any?
+    func setObject(_ object: Any, forKeyedSubscript key: String)
+}
+
+@objc protocol SBApplicationWrapperExports: SBObjectWrapperExports {
     var bundleIdentifier: String { get }
     var isRunning: Bool { get }
     
     func activate()
-    func property(_ key: String) -> Any?
-    func setProperty(_ key: String, _ value: Any)
 }
 
-@objc class SBWrapper: NSObject, SBWrapperExports {
+@objc class SBObjectWrapper: NSObject, SBObjectWrapperExports {
+    let element: SBObject
+    
+    init(element: SBObject) {
+        self.element = element
+    }
+    
+    func property(_ key: String) -> Any? {
+        guard let val = element.value(forKey: key) else { return nil }
+        return SBObjectWrapper.wrap(val)
+    }
+    
+    func setProperty(_ key: String, _ value: Any) {
+        element.setValue(value, forKey: key)
+    }
+    
+    // Support for app["documents"]
+    func objectForKeyedSubscript(_ key: String) -> Any? {
+        return property(key)
+    }
+    
+    func setObject(_ object: Any, forKeyedSubscript key: String) {
+        setProperty(key, object)
+    }
+    
+    // Support for array subscripting (app["documents"]) via KVC fallback
+    override func value(forUndefinedKey key: String) -> Any? {
+        return property(key)
+    }
+    
+    override var description: String {
+        return "<SBObject: \(element)>"
+    }
+    
+    internal static func wrap(_ value: Any) -> Any {
+        if let sbObj = value as? SBObject {
+            return SBObjectWrapper(element: sbObj)
+        }
+        if let sbArray = value as? [Any] { // SBElementArray bridges to Array
+             return sbArray.map { wrap($0) }
+        }
+        return value
+    }
+}
+
+@objc class SBApplicationWrapper: SBObjectWrapper, SBApplicationWrapperExports {
     let app: SBApplication
     let bundleIdentifier: String
     
     init(app: SBApplication, bundleIdentifier: String) {
         self.app = app
         self.bundleIdentifier = bundleIdentifier
+        super.init(element: app)
     }
     
     var isRunning: Bool { app.isRunning }
     
     func activate() {
         app.activate()
-    }
-    
-    func property(_ key: String) -> Any? {
-        // Retrieve property using KVC
-        // SBObject returns objects that need further wrapping if they are SBObjects
-        guard let val = app.value(forKey: key) else { return nil }
-        return val
-    }
-    
-    func setProperty(_ key: String, _ value: Any) {
-        app.setValue(value, forKey: key)
-    }
-    
-    // Support for array subscripting (app["documents"])
-    override func value(forUndefinedKey key: String) -> Any? {
-        return property(key)
     }
 }
 
@@ -47,11 +84,11 @@ public struct ApplicationAPI: NativeAPIProvider {
     
     public static func install(in context: JSContext) -> JSValue {
         
-        // Application(nameOrId) -> SBWrapper?
-        let application: @convention(block) (String) -> SBWrapper? = { nameOrId in
+        // Application(nameOrId) -> SBApplicationWrapper?
+        let application: @convention(block) (String) -> SBApplicationWrapper? = { nameOrId in
             // Try bundle ID first
             if let app = SBApplication(bundleIdentifier: nameOrId) {
-                return SBWrapper(app: app, bundleIdentifier: nameOrId)
+                return SBApplicationWrapper(app: app, bundleIdentifier: nameOrId)
             }
             
             return nil

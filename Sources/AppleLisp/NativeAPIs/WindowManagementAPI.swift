@@ -71,6 +71,56 @@ public struct WindowManagementAPI: NativeAPIProvider {
         api.setObject(unsafeBitCast(setFrame, to: AnyObject.self),
                       forKeyedSubscript: "setFrame" as NSString)
         
+        // focus(pid) -> Bool
+        let focus: @convention(block) (Int32) -> Bool = { pid in
+            if let app = NSRunningApplication(processIdentifier: pid) {
+                return app.activate(options: .activateIgnoringOtherApps)
+            }
+            return false
+        }
+        api.setObject(unsafeBitCast(focus, to: AnyObject.self),
+                      forKeyedSubscript: "focus" as NSString)
+        
+        // minimize(pid) -> Bool (Hides application)
+        let minimize: @convention(block) (Int32) -> Bool = { pid in
+            if let app = NSRunningApplication(processIdentifier: pid) {
+                app.hide()
+                return true
+            }
+            return false
+        }
+        api.setObject(unsafeBitCast(minimize, to: AnyObject.self),
+                      forKeyedSubscript: "minimize" as NSString)
+        
+        // raise(pid) -> Bool (Same as focus for now)
+        let raise: @convention(block) (Int32) -> Bool = { pid in
+            if let app = NSRunningApplication(processIdentifier: pid) {
+                return app.activate(options: .activateIgnoringOtherApps)
+            }
+            return false
+        }
+        api.setObject(unsafeBitCast(raise, to: AnyObject.self),
+                      forKeyedSubscript: "raise" as NSString)
+        
+        // snapshot(windowId) -> String? (Base64 PNG)
+        let snapshot: @convention(block) (Int32) -> String? = { windowId in
+            let id = CGWindowID(windowId)
+            let option: CGWindowListOption = (id == 0) ? .optionOnScreenOnly : .optionIncludingWindow
+            let imageId = (id == 0) ? kCGNullWindowID : id
+            
+            guard let image = CGWindowListCreateImage(.infinite, option, imageId, .bestResolution) else {
+                return nil
+            }
+            
+            let bitmap = NSBitmapImageRep(cgImage: image)
+            guard let png = bitmap.representation(using: .png, properties: [:]) else {
+                return nil
+            }
+            return png.base64EncodedString()
+        }
+        api.setObject(unsafeBitCast(snapshot, to: AnyObject.self),
+                      forKeyedSubscript: "snapshot" as NSString)
+
         return api
     }
     
@@ -78,10 +128,11 @@ public struct WindowManagementAPI: NativeAPIProvider {
         var position = CGPoint(x: x, y: y)
         var size = CGSize(width: w, height: h)
         
-        let positionVal = AXValueCreate(.cgPoint, &position)!
-        let sizeVal = AXValueCreate(.cgSize, &size)!
-        
-        AXUIElementSetAttributeValue(element, kAXPositionAttribute as CFString, positionVal)
-        AXUIElementSetAttributeValue(element, kAXSizeAttribute as CFString, sizeVal)
+        if let positionVal = AXValueCreate(.cgPoint, &position) {
+            AXUIElementSetAttributeValue(element, kAXPositionAttribute as CFString, positionVal)
+        }
+        if let sizeVal = AXValueCreate(.cgSize, &size) {
+            AXUIElementSetAttributeValue(element, kAXSizeAttribute as CFString, sizeVal)
+        }
     }
 }

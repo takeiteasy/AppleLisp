@@ -127,6 +127,184 @@ public struct FileManagerAPI: NativeAPIProvider {
         api.setObject(unsafeBitCast(tempDirectory, to: AnyObject.self), 
                       forKeyedSubscript: "tempDirectory" as NSString)
         
+        // --- New Additions ---
+        
+        // getAttributes(path) -> Dictionary
+        let getAttributes: @convention(block) (String) -> [String: Any]? = { path in
+            guard let attrs = try? fm.attributesOfItem(atPath: path) else { return nil }
+            var result: [String: Any] = [:]
+            
+            if let size = attrs[.size] as? Int { result["size"] = size }
+            if let created = attrs[.creationDate] as? Date {
+                result["creationDate"] = created.timeIntervalSince1970
+            }
+            if let modified = attrs[.modificationDate] as? Date {
+                result["modificationDate"] = modified.timeIntervalSince1970
+            }
+            if let type = attrs[.type] as? FileAttributeType {
+                result["type"] = type.rawValue
+            }
+            if let perms = attrs[.posixPermissions] as? Int {
+                result["permissions"] = perms
+            }
+            if let owner = attrs[.ownerAccountName] as? String {
+                result["owner"] = owner
+            }
+            
+            return result
+        }
+        api.setObject(unsafeBitCast(getAttributes, to: AnyObject.self),
+                      forKeyedSubscript: "getAttributes" as NSString)
+        
+        // setPermissions(path, octal) -> Bool
+        let setPermissions: @convention(block) (String, Int) -> Bool = { path, perms in
+            do {
+                try fm.setAttributes([.posixPermissions: perms], ofItemAtPath: path)
+                return true
+            } catch {
+                return false
+            }
+        }
+        api.setObject(unsafeBitCast(setPermissions, to: AnyObject.self),
+                      forKeyedSubscript: "setPermissions" as NSString)
+        
+        // glob(pattern) -> [String]
+        let glob: @convention(block) (String) -> [String] = { pattern in
+             // Using subpaths and predicate matching for a basic "recursive glob" experience if pattern contains "/"
+             // If pattern is simple "*.txt", we search current dir? Or just recursive?
+             // Usually glob expands from CWD.
+             // We will scan the current directory recursively and filter.
+             // Warning: This can be slow for large directories.
+             
+             let currentDir = fm.currentDirectoryPath
+             guard let enumerator = fm.enumerator(atPath: currentDir) else { return [] }
+             
+             let predicate = NSPredicate(format: "SELF LIKE %@", pattern)
+             var results: [String] = []
+             
+             for case let file as String in enumerator {
+                 if predicate.evaluate(with: file) {
+                     results.append(file)
+                 }
+             }
+             return results
+        }
+        api.setObject(unsafeBitCast(glob, to: AnyObject.self),
+                      forKeyedSubscript: "glob" as NSString)
+
+        // getXAttr(path, name) -> String?
+        let getXAttr: @convention(block) (String, String) -> String? = { path, name in
+            let url = URL(fileURLWithPath: path)
+            return try? url.extendedAttribute(forName: name)
+        }
+        api.setObject(unsafeBitCast(getXAttr, to: AnyObject.self),
+                      forKeyedSubscript: "getXAttr" as NSString)
+
+        // setXAttr(path, name, value) -> Bool
+        let setXAttr: @convention(block) (String, String, String) -> Bool = { path, name, value in
+            let url = URL(fileURLWithPath: path)
+            do {
+                try url.setExtendedAttribute(data: Data(value.utf8), forName: name)
+                return true
+            } catch {
+                return false
+            }
+        }
+        api.setObject(unsafeBitCast(setXAttr, to: AnyObject.self),
+                      forKeyedSubscript: "setXAttr" as NSString)
+        
+        // listXAttrs(path) -> [String]
+        let listXAttrs: @convention(block) (String) -> [String] = { path in
+            let url = URL(fileURLWithPath: path)
+            return (try? url.listExtendedAttributes()) ?? []
+        }
+        api.setObject(unsafeBitCast(listXAttrs, to: AnyObject.self),
+                      forKeyedSubscript: "listXAttrs" as NSString)
+        
+        // removeXAttr(path, name) -> Bool
+        let removeXAttr: @convention(block) (String, String) -> Bool = { path, name in
+            let url = URL(fileURLWithPath: path)
+            do {
+                try url.removeExtendedAttribute(forName: name)
+                return true
+            } catch {
+                return false
+            }
+        }
+        api.setObject(unsafeBitCast(removeXAttr, to: AnyObject.self),
+                      forKeyedSubscript: "removeXAttr" as NSString)
+        
         return api
+    }
+}
+
+// MARK: - Extended Attributes Helper
+// We need to implement these helpers as they are not standard on URL in pure Swift/Foundation without wrappers
+extension URL {
+    func extendedAttribute(forName name: String) throws -> String? {
+        let data = try self.withUnsafeFileSystemRepresentation { fileSystemPath -> Data? in
+            guard let fileSystemPath = fileSystemPath else { return nil }
+            
+            // Determine size
+            let length = getxattr(fileSystemPath, name, nil, 0, 0, 0)
+            if length < 0 {
+                // If error is "attribute not found", return nil
+                if errno == ENOATTR { return nil }
+                throw URL.posixError(errno)
+            }
+            
+            var data = Data(count: length)
+            let result = data.withUnsafeMutableBytes {
+                getxattr(fileSystemPath, name, $0.baseAddress, length, 0, 0)
+            }
+            
+            if result < 0 { throw URL.posixError(errno) }
+            return data
+        }
+        guard let data = data else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
+    func setExtendedAttribute(data: Data, forName name: String) throws {
+        try self.withUnsafeFileSystemRepresentation { fileSystemPath in
+            guard let fileSystemPath = fileSystemPath else { return }
+            let result = data.withUnsafeBytes {
+                setxattr(fileSystemPath, name, $0.baseAddress, data.count, 0, 0)
+            }
+            if result < 0 { throw URL.posixError(errno) }
+        }
+    }
+
+    func removeExtendedAttribute(forName name: String) throws {
+        try self.withUnsafeFileSystemRepresentation { fileSystemPath in
+            guard let fileSystemPath = fileSystemPath else { return }
+            let result = removexattr(fileSystemPath, name, 0)
+            if result < 0 { throw URL.posixError(errno) }
+        }
+    }
+
+    func listExtendedAttributes() throws -> [String] {
+        try self.withUnsafeFileSystemRepresentation { fileSystemPath -> [String] in
+            guard let fileSystemPath = fileSystemPath else { return [] }
+            let length = listxattr(fileSystemPath, nil, 0, 0)
+            if length < 0 { throw URL.posixError(errno) }
+            if length == 0 { return [] }
+
+            var data = Data(count: length)
+            let result = data.withUnsafeMutableBytes {
+                listxattr(fileSystemPath, $0.baseAddress, length, 0)
+            }
+            if result < 0 { throw URL.posixError(errno) }
+
+            // Split null-terminated strings
+            let list = data.split(separator: 0).compactMap {
+                String(data: Data($0), encoding: .utf8)
+            }
+            return list
+        }
+    }
+
+    static func posixError(_ err: Int32) -> NSError {
+        return NSError(domain: NSPOSIXErrorDomain, code: Int(err), userInfo: nil)
     }
 }

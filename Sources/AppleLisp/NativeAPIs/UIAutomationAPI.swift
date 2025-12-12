@@ -11,6 +11,11 @@ import ApplicationServices
     func perform(_ action: String) -> Bool
     func attribute(_ name: String) -> Any?
     func setAttribute(_ name: String, _ value: Any)
+    
+    // New additions
+    func actions() -> [String]
+    func attributes() -> [String]
+    func waitFor(_ attribute: String, _ value: Any, _ timeout: Double) -> Bool
 }
 
 @objc class AXWrapper: NSObject, AXWrapperExports {
@@ -50,6 +55,41 @@ import ApplicationServices
     
     func setAttribute(_ name: String, _ value: Any) {
         AXUIElementSetAttributeValue(element, name as CFString, value as CFTypeRef)
+    }
+    
+    // List all available actions
+    func actions() -> [String] {
+        var names: CFArray?
+        let error = AXUIElementCopyActionNames(element, &names)
+        if error == .success, let list = names as? [String] {
+            return list
+        }
+        return []
+    }
+    
+    // List all available attributes
+    func attributes() -> [String] {
+        var names: CFArray?
+        let error = AXUIElementCopyAttributeNames(element, &names)
+        if error == .success, let list = names as? [String] {
+            return list
+        }
+        return []
+    }
+    
+    // Wait for an attribute to equal a value
+    func waitFor(_ attribute: String, _ value: Any, _ timeout: Double) -> Bool {
+        let start = Date()
+        while Date().timeIntervalSince(start) < timeout {
+            if let current = getAttribute(attribute) {
+                // Compare string representation for simplicity in JS context
+                if String(describing: current) == String(describing: value) {
+                    return true
+                }
+            }
+            Thread.sleep(forTimeInterval: 0.1)
+        }
+        return false
     }
     
     private func getAttribute(_ name: String) -> Any? {

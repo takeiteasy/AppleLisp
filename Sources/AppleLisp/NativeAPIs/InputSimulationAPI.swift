@@ -1,5 +1,6 @@
 import JavaScriptCore
 import CoreGraphics
+import Foundation
 
 public struct InputSimulationAPI: NativeAPIProvider {
     public static var apiName: String { "InputSimulation" }
@@ -45,29 +46,27 @@ public struct InputSimulationAPI: NativeAPIProvider {
         let typeString: @convention(block) (String) -> Bool = { string in
             guard let src = CGEventSource(stateID: .hidSystemState) else { return false }
             
-            for char in string.utf16 {
-                // This is a simplified typing simulation. 
-                // For full support we'd need to map chars to keycodes, which is complex.
-                // However, CGEvent(keyboardEventSource:virtualKey:keyDown:) isn't enough for unicode.
-                // We can try a lower level approach or mapping.
-                // A common workaround is setting keyboard layout, but that's hard.
-                // Actually, UniChar injection is possible with CGEventKeyboardSetUnicodeString (deprecated or private in Swift sometimes?)
-                // Let's use a simpler approach: key strokes for standard ASCII if possible, or just fail for complex ones for now.
-                // Better approach for "typeString": specific usage often involves standard keys.
-                
-                // Note: CGEvent doesn't easily support "just type this char" without keycode mapping.
-                // Let's try to simulate key presses for known ASCII or use the specific API if accessible.
-                // But Swift CoreGraphics overlay might hide legacy functions.
-                
-                // Let's stick to simple "events from string" if possible, but standard API lacks it.
-                // We'll leave it as "keyPress" focused or implement a basic mapper if really needed.
-                // Actually, let's omit "typeString" for now if it's too complex to do robustly without a huge map,
-                // OR just expose mouse functions which are easier.
+            // For unicode typing, we use a special event with 0 keycode
+            // and set the string directly.
+            let utf16 = Array(string.utf16)
+            guard let keyDown = CGEvent(keyboardEventSource: src, virtualKey: 0, keyDown: true),
+                  let keyUp = CGEvent(keyboardEventSource: src, virtualKey: 0, keyDown: false) else {
+                return false
             }
-            // For now, let's just implement mouse functions and keyPress.
-            return false
+            
+            utf16.withUnsafeBufferPointer { buffer in
+                guard let base = buffer.baseAddress else { return }
+                keyDown.keyboardSetUnicodeString(stringLength: buffer.count, unicodeString: base)
+                keyUp.keyboardSetUnicodeString(stringLength: buffer.count, unicodeString: base)
+            }
+            
+            keyDown.post(tap: .cghidEventTap)
+            keyUp.post(tap: .cghidEventTap)
+            
+            return true
         }
-        // Skipping typeString for now to keep implementation clean.
+        api.setObject(unsafeBitCast(typeString, to: AnyObject.self),
+                      forKeyedSubscript: "typeString" as NSString)
         
         // mouseMove(x, y) -> Bool
         let mouseMove: @convention(block) (Double, Double) -> Bool = { x, y in
@@ -123,6 +122,32 @@ public struct InputSimulationAPI: NativeAPIProvider {
         }
         api.setObject(unsafeBitCast(getMousePosition, to: AnyObject.self),
                       forKeyedSubscript: "getMousePosition" as NSString)
+
+        // scroll(deltaY, deltaX?) -> Bool
+        // Positive deltaY is up (or down depending on natural scrolling), usually standard is down.
+        // Actually for CGEvent scrollWheelEvent2Source:
+        // wheel1 is Y (vertical), wheel2 is X (horizontal).
+        let scrollInput: @convention(block) (Int32, Int32) -> Bool = { deltaY, deltaX in
+             guard let src = CGEventSource(stateID: .hidSystemState) else { return false }
+             // wheelCount: 2 (Y and X)
+             // wheel1: Y
+             // wheel2: X
+             guard let event = CGEvent(scrollWheelEvent2Source: src, units: .line, wheelCount: 2, wheel1: deltaY, wheel2: deltaX, wheel3: 0) else {
+                 return false
+             }
+             event.post(tap: .cghidEventTap)
+             return true
+        }
+        api.setObject(unsafeBitCast(scrollInput, to: AnyObject.self),
+                      forKeyedSubscript: "scrollInput" as NSString)
+
+        // delayInput(seconds) -> Void
+        // Using Thread.sleep might block the JS thread, which is what we want for synchronous automation scripts.
+        let delayInput: @convention(block) (Double) -> Void = { seconds in
+            Thread.sleep(forTimeInterval: seconds)
+        }
+        api.setObject(unsafeBitCast(delayInput, to: AnyObject.self),
+                      forKeyedSubscript: "delayInput" as NSString)
         
         return api
     }
