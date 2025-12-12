@@ -13,6 +13,14 @@ public class AppleLisp {
         case Process
         case UserDefaults
         case Workspace
+        case Clipboard
+        case Interaction
+        case Application
+        case Notification
+        case UIAutomation
+        case InputSimulation
+        case SystemControl
+        case WindowManagement
     }
     
     public enum Error: Swift.Error, LocalizedError {
@@ -93,6 +101,22 @@ public class AppleLisp {
             jsValue = UserDefaultsAPI.install(in: context)
         case .Workspace:
             jsValue = WorkspaceAPI.install(in: context)
+        case .Clipboard:
+            jsValue = ClipboardAPI.install(in: context)
+        case .Interaction:
+            jsValue = InteractionAPI.install(in: context)
+        case .Application:
+            jsValue = ApplicationAPI.install(in: context)
+        case .Notification:
+            jsValue = NotificationAPI.install(in: context)
+        case .UIAutomation:
+            jsValue = UIAutomationAPI.install(in: context)
+        case .InputSimulation:
+            jsValue = InputSimulationAPI.install(in: context)
+        case .SystemControl:
+            jsValue = SystemControlAPI.install(in: context)
+        case .WindowManagement:
+            jsValue = WindowManagementAPI.install(in: context)
         }
         
         // Store in __macos_apis cache

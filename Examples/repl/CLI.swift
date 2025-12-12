@@ -22,9 +22,6 @@ struct AppleLispCLI: ParsableCommand {
     @Flag(name: .shortAndLong, help: "Enter REPL after evaluating files")
     var repl: Bool = false
     
-    @Flag(name: .long, help: "Open editor")
-    var edit: Bool = false
-    
     @Option(name: .shortAndLong, help: "Config file to load (default: ~/.mlisp or ./.mlisp)")
     var config: String?
     
@@ -37,79 +34,8 @@ struct AppleLispCLI: ParsableCommand {
             throw ExitCode.failure
         }
         
-        // Editor mode
-        if edit {
-            let editor = Editor()
-            
-            // Wire up KeyMapCallbacks to editor's keyMap
-            KeyMapCallbacks.bind = { seqStr, action in
-                guard let seq = KeyMapAPI.parseKeySequence(seqStr) else {
-                    print("[KeyMap] Invalid key sequence: \(seqStr)")
-                    return false
-                }
-                editor.keyMap.bind(seq, name: seqStr, to: action)
-                return true
-            }
-            KeyMapCallbacks.unbind = { seqStr in
-                guard let seq = KeyMapAPI.parseKeySequence(seqStr) else { return false }
-                // Unbind first combo only for simplicity
-                if let combo = seq.combos.first, seq.combos.count == 1 {
-                    editor.keyMap.unbind(combo)
-                }
-                return true
-            }
-            KeyMapCallbacks.list = {
-                editor.keyMap.allBindings.compactMap { $0.name }
-            }
-            KeyMapCallbacks.debug = { enable in
-                editor.debugKeyBindings = enable
-            }
-            
-            // Wire up EditorCallbacks for config access
-            EditorCallbacks.moveUp = { editor.moveUpPublic() }
-            EditorCallbacks.moveDown = { editor.moveDownPublic() }
-            EditorCallbacks.moveLeft = { editor.moveLeftPublic() }
-            EditorCallbacks.moveRight = { editor.moveRightPublic() }
-            EditorCallbacks.moveHome = { editor.moveHomePublic() }
-            EditorCallbacks.moveEnd = { editor.moveEndPublic() }
-            EditorCallbacks.pageUp = { editor.pageUpPublic() }
-            EditorCallbacks.pageDown = { editor.pageDownPublic() }
-            EditorCallbacks.save = { editor.savePublic() }
-            EditorCallbacks.quit = { editor.quitPublic() }
-            EditorCallbacks.insertChar = { char in
-                if let c = char.first { editor.insertCharPublic(c) }
-            }
-            EditorCallbacks.insertText = { editor.insertTextPublic($0) }
-            EditorCallbacks.newline = { editor.insertNewlinePublic() }
-            EditorCallbacks.backspace = { editor.backspacePublic() }
-            EditorCallbacks.deleteChar = { editor.deleteCharPublic() }
-            
-            // S-expression navigation
-            EditorCallbacks.forwardSexp = { editor.forwardSexpPublic() }
-            EditorCallbacks.backwardSexp = { editor.backwardSexpPublic() }
-            EditorCallbacks.gotoMatchingParen = { editor.gotoMatchingParenPublic() }
-            EditorCallbacks.killSexp = { editor.killSexpPublic() }
-            
-            EditorCallbacks.getCursorX = { editor.cursorXPublic }
-            EditorCallbacks.getCursorY = { editor.cursorYPublic }
-            EditorCallbacks.getLineCount = { editor.lineCountPublic }
-            EditorCallbacks.getCurrentLine = { editor.currentLinePublic }
-            EditorCallbacks.setStatusMessage = { editor.setStatusMessagePublic($0) }
-            
-            // Register APIs with AppleLisp context
-            lisp.registerCustomAPI(name: "KeyMap", value: KeyMapAPI.install(in: lisp.jsContext))
-            lisp.registerCustomAPI(name: "Editor", value: EditorAPI.install(in: lisp.jsContext))
-            lisp.registerCustomAPI(name: "Hooks", value: HooksAPI.install(in: lisp.jsContext))
-            
-            // Load config file
-            loadConfig(lisp: lisp)
-            
-            // Run after-init-hook (after config loaded)
-            Hooks.shared.run(HookNames.afterInit)
-            
-            editor.open(file: files.first)
-            return
-        }
+        // Load config file
+        loadConfig(lisp: lisp)
         
         var hadError = false
         
@@ -194,7 +120,6 @@ enum REPL {
           :help     Show this help message
           :quit     Exit the REPL
           :q        Exit the REPL (short)
-          :edit     Open editor
           :load     Load and evaluate a file
         
         Examples:
@@ -238,9 +163,6 @@ enum REPL {
                     return
                 case ":help":
                     printHelp()
-                case ":edit":
-                    let editor = Editor()
-                    editor.open(file: arg)
                 case ":load":
                     if let file = arg {
                         do {
@@ -312,4 +234,3 @@ extension AppleLispCLI {
         }
     }
 }
-
