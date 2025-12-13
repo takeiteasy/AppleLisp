@@ -1,6 +1,6 @@
 # AppleLisp
 
-AppleScript really sucks. I don't like it. AppleScript is a Clojure-like Lisp dialect designed to automate macOS.
+AppleScript really sucks. I don't like it. AppleLisp is a Clojure-like Lisp dialect designed to automate macOS.
 
 ## About
 
@@ -8,7 +8,7 @@ MacOS includes the `JavaScriptCore.framework`, so to save a lot of time and rein
 
 ### Why wisp? Why not JavaScript
 
-I don't like JavaScript. I don't like AppleScript. I don't like Swift. I like Lisp. JavaScript is the core so it supports JavaScript as well but I won't be doing that.
+I don't like JavaScript. I don't like AppleScript. I don't like Swift. I like Lisp. The core is JavaScript so it supports JavaScript as well but I won't be doing that.
 
 ## Supported APIs
 
@@ -412,7 +412,7 @@ Interact with the macOS workspace (launching apps, opening files).
 
 ## Building
 
-To build the library and examples:
+To build the library and REPL:
 
 ```bash
 swift build
@@ -422,12 +422,6 @@ To run the REPL example:
 
 ```bash
 swift run repl
-```
-
-To run the Editor example:
-
-```bash
-swift run editor
 ```
 
 ## License

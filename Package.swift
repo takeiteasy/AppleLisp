@@ -14,10 +14,6 @@ let package = Package(
         .executable(
             name: "repl",
             targets: ["repl"]
-        ),
-        .executable(
-            name: "editor",
-            targets: ["Editor"]
         )
     ],
     dependencies: [
@@ -39,15 +35,6 @@ let package = Package(
             ],
             path: "Examples/repl"
         ),
-        .executableTarget(
-            name: "Editor",
-            dependencies: [
-                "AppleLisp",
-                "CNcurses",
-                .product(name: "ArgumentParser", package: "swift-argument-parser")
-            ],
-            path: "Examples/Editor"
-        ),
         .testTarget(
             name: "AppleLispTests",
             dependencies: ["AppleLisp"]
@@ -55,10 +42,6 @@ let package = Package(
         .systemLibrary(
             name: "CEditline",
             path: "Examples/CEditline"
-        ),
-        .systemLibrary(
-            name: "CNcurses",
-            path: "Examples/CNcurses"
         )
     ]
 )
