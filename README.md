@@ -408,6 +408,37 @@ Interact with the macOS workspace (launching apps, opening files).
 
 ;; Find full path for application
 (print (.fullPath ws "Terminal"))
+
+;; Observe system events (notification center)
+;; Watch for application launches
+(def token (.observe ws "didLaunchApplication"
+  (fn [data]
+    (print (str "App launched: " (get data "localizedName")))
+    (print (str "Bundle ID: " (get data "bundleIdentifier")))
+    (print (str "PID: " (get data "processIdentifier"))))))
+
+;; Watch for application termination
+(.observe ws "didTerminateApplication"
+  (fn [data]
+    (print (str "App terminated: " (get data "localizedName")))))
+
+;; Watch for system sleep/wake events
+(.observe ws "willSleep" (fn [] (print "System going to sleep...")))
+(.observe ws "didWake" (fn [] (print "System woke up!")))
+
+;; Watch for volume mounts
+(.observe ws "didMountVolume"
+  (fn [data]
+    (print (str "Volume mounted: " (get data "path")))))
+
+;; Get list of supported notifications
+(print (.getSupportedNotifications ws))
+
+;; Remove specific observer
+(.removeObserver ws token)
+
+;; Remove all observers
+(.removeAllObservers ws)
 ```
 
 ## Building
