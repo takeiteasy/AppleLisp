@@ -136,6 +136,17 @@ public class AppleLisp {
         return value
     }
     
+    /// Register a custom API using a NativeAPIProvider type
+    /// This allows external packages to define APIs following the same pattern as built-in APIs
+    @discardableResult
+    public func registerCustomAPI<T: NativeAPIProvider>(_ provider: T.Type) -> JSValue {
+        let jsValue = provider.install(in: context)
+        let apis = context.objectForKeyedSubscript("__macos_apis")!
+        apis.setObject(jsValue, forKeyedSubscript: provider.apiName as NSString)
+        customAPIs.insert(provider.apiName)
+        return jsValue
+    }
+    
     /// Check if a custom API is registered
     public func hasCustomAPI(name: String) -> Bool {
         return customAPIs.contains(name)
