@@ -5,24 +5,8 @@ public class AppleLisp {
     public let jsContext: JSContext
     private var context: JSContext { jsContext }  // Backward compat alias
     private let wispCompile: JSValue
-    private var loadedAPIs: Set<NativeAPI> = []
     private var customAPIs: Set<String> = []
-    
-    public enum NativeAPI: String, CaseIterable {
-        case FileManager
-        case Process
-        case UserDefaults
-        case Workspace
-        case Clipboard
-        case Interaction
-        case Application
-        case Notification
-        case UIAutomation
-        case InputSimulation
-        case SystemControl
-        case WindowManagement
-    }
-    
+
     public enum Error: Swift.Error, LocalizedError {
         case runtimeNotFound
         case wispNotLoaded
@@ -82,51 +66,8 @@ public class AppleLisp {
         setupRequireHook()
     }
     
-    // MARK: - Native API Loading
-    
-    @discardableResult
-    public func loadAPI(_ api: NativeAPI) -> JSValue {
-        if loadedAPIs.contains(api) {
-            return context.objectForKeyedSubscript("__macos_apis")!
-                .objectForKeyedSubscript(api.rawValue)!
-        }
-        
-        let jsValue: JSValue
-        switch api {
-        case .FileManager:
-            jsValue = FileManagerAPI.install(in: context)
-        case .Process:
-            jsValue = ProcessAPI.install(in: context)
-        case .UserDefaults:
-            jsValue = UserDefaultsAPI.install(in: context)
-        case .Workspace:
-            jsValue = WorkspaceAPI.install(in: context)
-        case .Clipboard:
-            jsValue = ClipboardAPI.install(in: context)
-        case .Interaction:
-            jsValue = InteractionAPI.install(in: context)
-        case .Application:
-            jsValue = ApplicationAPI.install(in: context)
-        case .Notification:
-            jsValue = NotificationAPI.install(in: context)
-        case .UIAutomation:
-            jsValue = UIAutomationAPI.install(in: context)
-        case .InputSimulation:
-            jsValue = InputSimulationAPI.install(in: context)
-        case .SystemControl:
-            jsValue = SystemControlAPI.install(in: context)
-        case .WindowManagement:
-            jsValue = WindowManagementAPI.install(in: context)
-        }
-        
-        // Store in __macos_apis cache
-        let apis = context.objectForKeyedSubscript("__macos_apis")!
-        apis.setObject(jsValue, forKeyedSubscript: api.rawValue as NSString)
-        
-        loadedAPIs.insert(api)
-        return jsValue
-    }
-    
+    // MARK: - Native API Registration
+
     /// Register a custom API from external code (e.g., repl target)
     @discardableResult
     public func registerCustomAPI(name: String, value: JSValue) -> JSValue {
@@ -152,11 +93,11 @@ public class AppleLisp {
         return customAPIs.contains(name)
     }
 
-    
-    public var availableAPIs: [NativeAPI] {
-        NativeAPI.allCases
+    /// Names of all currently registered custom APIs
+    public var availableAPIs: [String] {
+        Array(customAPIs)
     }
-    
+
     // MARK: - Compilation & Evaluation
     
     public func compile(source: String, uri: String = "<repl>") throws -> String {
@@ -226,34 +167,29 @@ public class AppleLisp {
     }
     
     private func setupRequireHook() {
-        // Swift callback for loading native APIs
+        // Swift callback for loading custom-registered native APIs
         let requireNative: @convention(block) (String) -> JSValue? = { [weak self] name in
             guard let self = self else { return nil }
-            
-            // First check if it's a custom-registered API
+
             let apis = self.context.objectForKeyedSubscript("__macos_apis")!
             if let customAPI = apis.objectForKeyedSubscript(name), !customAPI.isUndefined, !customAPI.isNull {
                 return customAPI
             }
-            
-            // Then check built-in APIs
-            guard let api = NativeAPI(rawValue: name) else {
-                print("Unknown native API: \(name)")
-                return nil
-            }
-            return self.loadAPI(api)
+
+            print("Unknown native API: \(name)")
+            return nil
         }
-        
+
         context.setObject(unsafeBitCast(requireNative, to: AnyObject.self),
                           forKeyedSubscript: "__macos_require" as NSString)
-        
+
         // Override require to intercept macos/* imports
         let requireHook = """
         (function() {
             var _originalRequire = typeof require !== 'undefined' ? require : null;
             require = function(name) {
                 if (typeof name === 'string' && name.indexOf('macos/') === 0) {
-                    var apiName = name.substring(8);
+                    var apiName = name.substring('macos/'.length);
                     var api = __macos_require(apiName);
                     if (!api) {
                         throw new Error('Unknown native API: ' + apiName);
