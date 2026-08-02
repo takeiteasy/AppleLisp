@@ -5,9 +5,9 @@ import JavaScriptCore
 import AppleLisp
 
 @main
-struct MLisp: ParsableCommand {
+struct APLLD: ParsableCommand {
     static let configuration = CommandConfiguration(
-        commandName: "mlisp",
+        commandName: "aplld",
         abstract: "A keyboard-driven daemon for macOS automation"
     )
 
@@ -39,7 +39,7 @@ struct MLisp: ParsableCommand {
             throw RuntimeError("Failed to start key capture. Ensure accessibility permissions are granted.")
         }
 
-        print("mlisp running with KeyBinding API.")
+        print("aplld running with KeyBinding API.")
         print("Registered bindings:")
         print("  C-x C-c  - Quit command")
         print("  C-x C-f  - Find file")

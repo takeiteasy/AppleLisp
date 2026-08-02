@@ -12,12 +12,12 @@ let package = Package(
             targets: ["AppleLisp"]
         ),
         .executable(
-            name: "repl",
-            targets: ["repl"]
+            name: "apll",
+            targets: ["apll"]
         ),
         .executable(
-            name: "mlisp",
-            targets: ["mlisp"]
+            name: "aplld",
+            targets: ["aplld"]
         )
     ],
     dependencies: [
@@ -31,21 +31,21 @@ let package = Package(
             ]
         ),
         .executableTarget(
-            name: "repl",
+            name: "apll",
             dependencies: [
                 "AppleLisp",
                 "CEditline",
                 .product(name: "ArgumentParser", package: "swift-argument-parser")
             ],
-            path: "Examples/repl"
+            path: "Sources/apll"
         ),
         .executableTarget(
-            name: "mlisp",
+            name: "aplld",
             dependencies: [
                 "AppleLisp",
                 .product(name: "ArgumentParser", package: "swift-argument-parser")
             ],
-            path: "Sources/mlisp",
+            path: "Sources/aplld",
             swiftSettings: [
                 .unsafeFlags(["-parse-as-library"])
             ]
@@ -56,7 +56,7 @@ let package = Package(
         ),
         .systemLibrary(
             name: "CEditline",
-            path: "Examples/CEditline"
+            path: "Sources/CEditline"
         )
     ]
 )

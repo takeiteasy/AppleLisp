@@ -5,8 +5,8 @@ AppleScript really sucks. I don't like it. AppleLisp is a Clojure-like Lisp dial
 The package ships three things:
 
 - **`AppleLisp` library** — the interpreter core, a `NativeAPIProvider` protocol for native APIs, and 14 built-in macOS native APIs (FileManager, Process, Clipboard, Workspace, Application, Notification, UIAutomation, InputSimulation, SystemControl, WindowManagement, Interaction, UserDefaults, KeyBinding, Cron).
-- **`mlisp`** — a keyboard-driven daemon for macOS providing Emacs-style global keybinding control (via `CGEventTap`), scripted in Wisp.
-- **`repl`** — an interactive REPL with history and `:load`/`:help` commands.
+- **`aplld`** — a keyboard-driven daemon for macOS providing Emacs-style global keybinding control (via `CGEventTap`), scripted in Wisp.
+- **`apll`** — an interactive REPL with history and `:load`/`:help` commands.
 
 ## Native APIs
 
@@ -81,13 +81,13 @@ swift build
 To run the REPL:
 
 ```bash
-swift run repl
+swift run apll
 ```
 
 To run the keyboard daemon (requires Accessibility permissions):
 
 ```bash
-swift run mlisp
+swift run aplld
 ```
 
 ## Key Notation

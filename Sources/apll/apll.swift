@@ -6,9 +6,9 @@ import ArgumentParser
 // MARK: - CLI
 
 @main
-struct AppleLispCLI: ParsableCommand {
+struct APLL: ParsableCommand {
     static let configuration = CommandConfiguration(
-        commandName: "repl",
+        commandName: "apll",
         abstract: "AppleLisp - Wisp Lisp on JavaScriptCore",
         version: "0.1.0"
     )
@@ -22,7 +22,7 @@ struct AppleLispCLI: ParsableCommand {
     @Flag(name: .shortAndLong, help: "Enter REPL after evaluating files")
     var repl: Bool = false
     
-    @Option(name: .shortAndLong, help: "Config file to load (default: ~/.mlisp or ./.mlisp)")
+    @Option(name: .shortAndLong, help: "Config file to load (default: ~/.apll or ./.apll)")
     var config: String?
     
     mutating func run() throws {
@@ -86,7 +86,7 @@ struct AppleLispCLI: ParsableCommand {
 // MARK: - REPL
 
 enum REPL {
-    static let historyPath = NSString("~/.mlisp_history").expandingTildeInPath
+    static let historyPath = NSString("~/.apll_history").expandingTildeInPath
     
     static func loadHistory() {
         guard FileManager.default.fileExists(atPath: historyPath),
@@ -202,7 +202,7 @@ enum REPL {
 
 // MARK: - Config Loading
 
-extension AppleLispCLI {
+extension APLL {
     func loadConfig(lisp: AppleLisp) {
         let fm = FileManager.default
         var configPath: String?
@@ -210,9 +210,9 @@ extension AppleLispCLI {
         if let userConfig = config {
             configPath = userConfig
         } else {
-            // Check default paths: ./.mlisp then ~/.mlisp
-            let localConfig = "./.mlisp"
-            let homeConfig = NSString("~/.mlisp").expandingTildeInPath
+            // Check default paths: ./.apll then ~/.apll
+            let localConfig = "./.apll"
+            let homeConfig = NSString("~/.apll").expandingTildeInPath
             
             if fm.fileExists(atPath: localConfig) {
                 configPath = localConfig
