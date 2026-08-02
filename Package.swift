@@ -14,10 +14,6 @@ let package = Package(
         .executable(
             name: "apll",
             targets: ["apll"]
-        ),
-        .executable(
-            name: "aplld",
-            targets: ["aplld"]
         )
     ],
     dependencies: [
@@ -38,17 +34,6 @@ let package = Package(
                 .product(name: "ArgumentParser", package: "swift-argument-parser")
             ],
             path: "Sources/apll"
-        ),
-        .executableTarget(
-            name: "aplld",
-            dependencies: [
-                "AppleLisp",
-                .product(name: "ArgumentParser", package: "swift-argument-parser")
-            ],
-            path: "Sources/aplld",
-            swiftSettings: [
-                .unsafeFlags(["-parse-as-library"])
-            ]
         ),
         .testTarget(
             name: "AppleLispTests",

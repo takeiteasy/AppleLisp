@@ -2,11 +2,10 @@
 
 AppleScript really sucks. I don't like it. AppleLisp is a Clojure-like Lisp dialect for JavaScriptCore. macOS includes the `JavaScriptCore.framework`, so to save a lot of time and reinventing the wheel we use [wisp](https://github.com/wisp-lang/wisp) that transpiles to JavaScript. AppleLisp wraps the wisp compiler and a `JSContext` to give you a Lisp REPL/evaluator, plus a protocol for exposing native Swift APIs to Lisp code.
 
-The package ships three things:
+The package ships two things:
 
 - **`AppleLisp` library** — the interpreter core, a `NativeAPIProvider` protocol for native APIs, and 14 built-in macOS native APIs (FileManager, Process, Clipboard, Workspace, Application, Notification, UIAutomation, InputSimulation, SystemControl, WindowManagement, Interaction, UserDefaults, KeyBinding, Cron).
-- **`aplld`** — a keyboard-driven daemon for macOS providing Emacs-style global keybinding control (via `CGEventTap`), scripted in Wisp.
-- **`apll`** — an interactive REPL with history and `:load`/`:help` commands.
+- **`apll`** — an interactive REPL with history and `:load`/`:help` commands. With the `--daemon` flag it runs as a keyboard-driven daemon for Emacs-style global keybinding control (via `CGEventTap`), scripted in Wisp.
 
 ## Native APIs
 
@@ -72,7 +71,7 @@ try lisp.registerAllNativeAPIs()
 
 ## Building
 
-To build the library, REPL, and daemon:
+To build the library and CLI:
 
 ```bash
 swift build
@@ -84,11 +83,31 @@ To run the REPL:
 swift run apll
 ```
 
-To run the keyboard daemon (requires Accessibility permissions):
+## Daemon mode
+
+`apll --daemon` runs as a keyboard-driven daemon that captures global key events (via
+`CGEventTap`) and dispatches Emacs-style multi-key sequences bound with the
+[KeyBinding](docs/KeyBinding.md) API. It requires Accessibility permissions at runtime.
+
+On startup it registers a set of example bindings scripted in Wisp:
+
+| Binding | Action |
+|---------|--------|
+| `C-x C-c` | Quit command |
+| `C-x C-f` | Find file |
+| `M-x` | Execute extended command |
+
+Pending sequences wait indefinitely for completion; pressing Escape cancels the
+current sequence and Ctrl+C exits the daemon.
 
 ```bash
-swift run aplld
+swift run apll --daemon
 ```
+
+Note: daemon mode does not currently load the config file (`~/.apll` or `./.apll`),
+and the example bindings above are hardcoded in `Sources/apll/apll.swift` rather than
+shipped as a default config. Users who want custom bindings must edit the CLI source
+until this is addressed.
 
 ## Key Notation
 

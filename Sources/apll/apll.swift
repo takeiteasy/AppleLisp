@@ -2,6 +2,7 @@ import AppleLisp
 import Foundation
 import CEditline
 import ArgumentParser
+import JavaScriptCore
 
 // MARK: - CLI
 
@@ -25,7 +26,15 @@ struct APLL: ParsableCommand {
     @Option(name: .shortAndLong, help: "Config file to load (default: ~/.apll or ./.apll)")
     var config: String?
     
+    @Flag(name: .shortAndLong, help: "Run as keyboard-driven daemon")
+    var daemon: Bool = false
+    
     mutating func run() throws {
+        if daemon {
+            try runDaemon()
+            return
+        }
+        
         let lisp: AppleLisp
         do {
             lisp = try AppleLisp()
@@ -80,6 +89,63 @@ struct APLL: ParsableCommand {
             }
             REPL.run(lisp: lisp)
         }
+    }
+}
+
+// MARK: - Daemon
+
+extension APLL {
+    func runDaemon() throws {
+        let lisp: AppleLisp
+        do {
+            lisp = try AppleLisp()
+            try lisp.registerAllNativeAPIs()
+        } catch {
+            fputs("Error: Failed to initialize AppleLisp: \(error.localizedDescription)\n", stderr)
+            throw ExitCode.failure
+        }
+
+        // Example: Set up some default bindings
+        do {
+            try lisp.evaluate(source: """
+                ;; Register some example bindings
+                (.bind KeyBinding "C-x C-c" (fn [] (prn "Quit command received")))
+                (.bind KeyBinding "C-x C-f" (fn [] (prn "Find file")))
+                (.bind KeyBinding "M-x" (fn [] (prn "Execute extended command")))
+
+                ;; Show partial sequence feedback
+                (.onSequenceChange KeyBinding (fn [seq]
+                  (when seq (prn (str "Waiting: " seq)))))
+
+                ;; Show when sequence is cancelled (by Escape)
+                (.onCancel KeyBinding (fn []
+                  (prn "Sequence cancelled")))
+                """)
+        } catch {
+            fputs("Error: \(error.localizedDescription)\n", stderr)
+            throw ExitCode.failure
+        }
+
+        // Start the key capture
+        let started = try lisp.evaluate(source: "(.start KeyBinding)")
+
+        if started?.toBool() != true {
+            fputs("Error: Failed to start key capture. Ensure accessibility permissions are granted.\n", stderr)
+            throw ExitCode.failure
+        }
+
+        print("apll running in daemon mode with KeyBinding API.")
+        print("Registered bindings:")
+        print("  C-x C-c  - Quit command")
+        print("  C-x C-f  - Find file")
+        print("  M-x      - Execute extended command")
+        print("")
+        print("Timeout: 0 (wait indefinitely for sequence)")
+        print("Press Escape to cancel a pending sequence.")
+        print("Press Ctrl+C to exit.")
+
+        // Run the main loop
+        CFRunLoopRun()
     }
 }
 
