@@ -88,6 +88,39 @@ public class AppleLisp {
         return jsValue
     }
     
+    /// Register all built-in macOS native APIs and define them as globals
+    /// in the Lisp environment. Returns the names of the registered APIs.
+    @discardableResult
+    public func registerAllNativeAPIs() throws -> [String] {
+        let providers: [NativeAPIProvider.Type] = [
+            FileManagerAPI.self,
+            ProcessAPI.self,
+            UserDefaultsAPI.self,
+            WorkspaceAPI.self,
+            ClipboardAPI.self,
+            InteractionAPI.self,
+            ApplicationAPI.self,
+            NotificationAPI.self,
+            UIAutomationAPI.self,
+            InputSimulationAPI.self,
+            SystemControlAPI.self,
+            WindowManagementAPI.self,
+            KeyBindingAPI.self,
+            CronAPI.self
+        ]
+
+        for provider in providers {
+            registerCustomAPI(provider)
+        }
+
+        let defs = providers
+            .map { "(def \($0.apiName) (get __macos_apis \"\($0.apiName)\"))" }
+            .joined(separator: "\n")
+        try evaluate(source: defs)
+
+        return providers.map { $0.apiName }
+    }
+
     /// Check if a custom API is registered
     public func hasCustomAPI(name: String) -> Bool {
         return customAPIs.contains(name)

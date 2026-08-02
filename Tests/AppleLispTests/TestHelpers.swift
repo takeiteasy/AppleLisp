@@ -6,6 +6,9 @@ class AppleLispTestCase: XCTestCase {
 
     override func setUpWithError() throws {
         lisp = try AppleLisp()
+
+        // Load all native APIs into global scope for tests
+        try lisp.registerAllNativeAPIs()
     }
     
     override func tearDownWithError() throws {

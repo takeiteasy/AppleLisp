@@ -14,6 +14,10 @@ let package = Package(
         .executable(
             name: "repl",
             targets: ["repl"]
+        ),
+        .executable(
+            name: "mlisp",
+            targets: ["mlisp"]
         )
     ],
     dependencies: [
@@ -34,6 +38,17 @@ let package = Package(
                 .product(name: "ArgumentParser", package: "swift-argument-parser")
             ],
             path: "Examples/repl"
+        ),
+        .executableTarget(
+            name: "mlisp",
+            dependencies: [
+                "AppleLisp",
+                .product(name: "ArgumentParser", package: "swift-argument-parser")
+            ],
+            path: "Sources/mlisp",
+            swiftSettings: [
+                .unsafeFlags(["-parse-as-library"])
+            ]
         ),
         .testTarget(
             name: "AppleLispTests",

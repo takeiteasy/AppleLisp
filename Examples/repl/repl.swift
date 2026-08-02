@@ -29,6 +29,7 @@ struct AppleLispCLI: ParsableCommand {
         let lisp: AppleLisp
         do {
             lisp = try AppleLisp()
+            try lisp.registerAllNativeAPIs()
         } catch {
             fputs("Error: Failed to initialize AppleLisp: \(error.localizedDescription)\n", stderr)
             throw ExitCode.failure
