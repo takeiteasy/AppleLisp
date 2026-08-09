@@ -4,7 +4,7 @@ AppleScript really sucks. I don't like it. AppleLisp is a Clojure-like Lisp dial
 
 The package ships two things:
 
-- **`AppleLisp` library** — the interpreter core, a `NativeAPIProvider` protocol for native APIs, and 12 built-in macOS native APIs (FileManager, Process, Clipboard, Workspace, Application, Notification, UIAutomation, InputSimulation, SystemControl, WindowManagement, Interaction, UserDefaults).
+- **`AppleLisp` library** — the interpreter core (wisp + JavaScriptCore), a `NativeAPIProvider` protocol for native APIs, and 12 built-in macOS native APIs (FileManager, Process, Clipboard, Workspace, Application, Notification, UIAutomation, InputSimulation, SystemControl, WindowManagement, Interaction, UserDefaults). The 12 native APIs are optional: the default build is core-only (just wisp + JavaScriptCore, no macOS frameworks) and the native bindings are compiled with the `APLL_NATIVE` build flag. See [docs/Building.md](docs/Building.md).
 - **`apll`** — an interactive REPL with history and `:load`/`:help` commands. With the `--daemon` flag it runs as a keyboard-driven daemon for Emacs-style global keybinding control (via `CGEventTap`), scripted in Wisp. It also registers the Cron and KeyBinding APIs, which are REPL/daemon features rather than part of the library.
 
 ## Native APIs
@@ -76,12 +76,18 @@ To register every built-in API as a Lisp global (`FileManager`, `Clipboard`, etc
 try lisp.registerAllNativeAPIs()
 ```
 
+`registerAllNativeAPIs()` is only available when the package is built with the
+`APLL_NATIVE` flag; custom `NativeAPIProvider` APIs work in the core-only build.
+
 ## Building
 
-To build the library and CLI:
+The package builds in two configurations. The default `swift build` produces a
+**core-only** build (wisp + JavaScriptCore, no macOS frameworks). Pass the
+`APLL_NATIVE` flag to include the 12 built-in native APIs and the apll daemon:
 
 ```bash
-swift build
+swift build                                  # core-only
+swift build -Xswiftc -D -Xswiftc APLL_NATIVE # full build with native APIs
 ```
 
 To run the REPL:
@@ -90,11 +96,15 @@ To run the REPL:
 swift run apll
 ```
 
+See [docs/Building.md](docs/Building.md) for what each configuration includes and
+excludes, and how it affects consuming the package as a dependency.
+
 ## Daemon mode
 
 `apll --daemon` runs as a keyboard-driven daemon that captures global key events (via
 `CGEventTap`) and dispatches Emacs-style multi-key sequences bound with the
-[KeyBinding](docs/REPL.md) API. It requires Accessibility permissions at runtime.
+[KeyBinding](docs/REPL.md) API. It requires Accessibility permissions at runtime, and
+is only available in a full build (with the `APLL_NATIVE` flag).
 
 On startup it registers a set of example bindings scripted in Wisp:
 

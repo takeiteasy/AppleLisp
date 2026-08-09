@@ -1,3 +1,4 @@
+#if APLL_NATIVE
 import JavaScriptCore
 import AppKit
 import UniformTypeIdentifiers
@@ -279,3 +280,5 @@ public struct WorkspaceAPI: NativeAPIProvider {
         return api
     }
 }
+
+#endif

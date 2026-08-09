@@ -8,7 +8,9 @@ class AppleLispTestCase: XCTestCase {
         lisp = try AppleLisp()
 
         // Load all native APIs into global scope for tests
+#if APLL_NATIVE
         try lisp.registerAllNativeAPIs()
+#endif
     }
     
     override func tearDownWithError() throws {

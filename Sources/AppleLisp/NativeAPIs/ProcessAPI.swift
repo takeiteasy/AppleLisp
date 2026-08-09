@@ -1,3 +1,4 @@
+#if APLL_NATIVE
 import JavaScriptCore
 import Foundation
 import AppKit
@@ -201,3 +202,5 @@ public struct ProcessAPI: NativeAPIProvider {
         return api
     }
 }
+
+#endif

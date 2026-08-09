@@ -1,3 +1,4 @@
+#if APLL_NATIVE
 import JavaScriptCore
 import UserNotifications
 
@@ -133,3 +134,5 @@ public struct NotificationAPI: NativeAPIProvider {
         return api
     }
 }
+
+#endif

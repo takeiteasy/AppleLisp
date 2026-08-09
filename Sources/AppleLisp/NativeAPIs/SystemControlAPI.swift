@@ -1,3 +1,4 @@
+#if APLL_NATIVE
 import JavaScriptCore
 import AppKit
 import Foundation
@@ -123,3 +124,5 @@ public struct SystemControlAPI: NativeAPIProvider {
         return api
     }
 }
+
+#endif

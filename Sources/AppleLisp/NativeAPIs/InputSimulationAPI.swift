@@ -1,3 +1,4 @@
+#if APLL_NATIVE
 import JavaScriptCore
 import CoreGraphics
 import Foundation
@@ -152,3 +153,5 @@ public struct InputSimulationAPI: NativeAPIProvider {
         return api
     }
 }
+
+#endif

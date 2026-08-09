@@ -1,3 +1,4 @@
+#if APLL_NATIVE
 import XCTest
 @testable import AppleLisp
 
@@ -34,3 +35,4 @@ final class ProcessTests: AppleLispTestCase {
         XCTAssertEqual(result, "false")
     }
 }
+#endif

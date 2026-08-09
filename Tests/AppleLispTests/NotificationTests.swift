@@ -1,3 +1,4 @@
+#if APLL_NATIVE
 import XCTest
 @testable import AppleLisp
 
@@ -22,3 +23,4 @@ final class NotificationTests: AppleLispTestCase {
         _ = try eval("(.setDelegate Notification (fn [act id] (print act)))")
     }
 }
+#endif

@@ -1,3 +1,4 @@
+#if APLL_NATIVE
 import JavaScriptCore
 import Cocoa
 import ApplicationServices
@@ -142,3 +143,5 @@ public struct UIAutomationAPI: NativeAPIProvider {
         return api
     }
 }
+
+#endif

@@ -1,3 +1,4 @@
+#if APLL_NATIVE
 import JavaScriptCore
 import Foundation
 
@@ -308,3 +309,5 @@ extension URL {
         return NSError(domain: NSPOSIXErrorDomain, code: Int(err), userInfo: nil)
     }
 }
+
+#endif

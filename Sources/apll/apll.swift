@@ -7,13 +7,14 @@ import JavaScriptCore
 // MARK: - apll-specific API registration
 
 extension AppleLisp {
-    /// Register the apll-specific native APIs (Cron, KeyBinding) on top of the
-    /// core APIs from `registerAllNativeAPIs()` and define them as Lisp globals.
+    /// Register the apll-specific native APIs (Cron, and KeyBinding when built
+    /// with the native bindings) on top of the core APIs from
+    /// `registerAllNativeAPIs()` and define them as Lisp globals.
     func registerREPLNativeAPIs() throws {
-        let providers: [NativeAPIProvider.Type] = [
-            CronAPI.self,
-            KeyBindingAPI.self
-        ]
+        var providers: [NativeAPIProvider.Type] = [CronAPI.self]
+#if APLL_NATIVE
+        providers.append(KeyBindingAPI.self)
+#endif
         for provider in providers {
             registerCustomAPI(provider)
         }
@@ -25,7 +26,9 @@ extension AppleLisp {
 
     static func makeLisp() throws -> AppleLisp {
         let lisp = try AppleLisp()
+#if APLL_NATIVE
         try lisp.registerAllNativeAPIs()
+#endif
         try lisp.registerREPLNativeAPIs()
         return lisp
     }
@@ -58,7 +61,11 @@ struct APLL: ParsableCommand {
     
     mutating func run() throws {
         if daemon {
+#if APLL_NATIVE
             try runDaemon()
+#else
+            fputs("Error: daemon mode requires building with -Xswiftc -D APLL_NATIVE\n", stderr)
+#endif
             return
         }
         
@@ -120,6 +127,7 @@ struct APLL: ParsableCommand {
 
 // MARK: - Daemon
 
+#if APLL_NATIVE
 extension APLL {
     func runDaemon() throws {
         let lisp: AppleLisp
@@ -173,6 +181,7 @@ extension APLL {
         CFRunLoopRun()
     }
 }
+#endif
 
 // MARK: - REPL
 

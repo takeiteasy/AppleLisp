@@ -6,6 +6,11 @@ daemon. They are defined as Lisp globals (`Cron`, `KeyBinding`) and are also
 available via `require`, but they are not part of the `AppleLisp` library
 itself.
 
+`Cron` is available in both build configurations. `KeyBinding` (and the
+`--daemon` mode that relies on it) use `CGEventTap` and are only available in a
+full build compiled with the `APLL_NATIVE` flag. See
+[docs/Building.md](docs/Building.md).
+
 ## Cron API
 
 Schedule recurring tasks using cron expressions.

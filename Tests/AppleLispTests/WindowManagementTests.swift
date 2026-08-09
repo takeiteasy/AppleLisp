@@ -1,3 +1,4 @@
+#if APLL_NATIVE
 import XCTest
 @testable import AppleLisp
 
@@ -27,3 +28,5 @@ final class WindowManagementTests: AppleLispTestCase {
         // Might be nil or empty string if invalid window, but shouldn't crash.
     }
 }
+
+#endif

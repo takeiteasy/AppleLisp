@@ -1,3 +1,4 @@
+#if APLL_NATIVE
 import XCTest
 @testable import AppleLisp
 
@@ -20,3 +21,5 @@ final class SystemControlTests: AppleLispTestCase {
         XCTAssertEqual(success, "true")
     }
 }
+
+#endif

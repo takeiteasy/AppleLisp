@@ -1,3 +1,4 @@
+#if APLL_NATIVE
 import JavaScriptCore
 import AppKit
 
@@ -71,3 +72,5 @@ public struct ClipboardAPI: NativeAPIProvider {
         return api
     }
 }
+
+#endif

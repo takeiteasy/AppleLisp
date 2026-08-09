@@ -1,3 +1,4 @@
+#if APLL_NATIVE
 import XCTest
 @testable import AppleLisp
 
@@ -39,3 +40,5 @@ final class InputSimulationTests: AppleLispTestCase {
          _ = try eval("(.typeString InputSimulation \"test\")")
     }
 }
+
+#endif

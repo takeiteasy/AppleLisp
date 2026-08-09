@@ -1,3 +1,4 @@
+#if APLL_NATIVE
 import JavaScriptCore
 import Foundation
 
@@ -67,3 +68,5 @@ public struct UserDefaultsAPI: NativeAPIProvider {
         return api
     }
 }
+
+#endif

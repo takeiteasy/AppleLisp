@@ -1,3 +1,4 @@
+#if APLL_NATIVE
 import XCTest
 @testable import AppleLisp
 
@@ -43,3 +44,5 @@ final class InteractionTests: AppleLispTestCase {
     //     XCTAssertTrue(result == "nil" || result == "undefined") // Assumes user cancels.
     // }
 }
+
+#endif

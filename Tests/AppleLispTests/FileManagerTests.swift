@@ -1,3 +1,4 @@
+#if APLL_NATIVE
 import XCTest
 @testable import AppleLisp
 
@@ -93,3 +94,4 @@ final class FileManagerTests: AppleLispTestCase {
         XCTAssertTrue(specific.contains("Sources/AppleLisp/AppleLisp.swift") || specific.contains("AppleLisp.swift"))
     }
 }
+#endif

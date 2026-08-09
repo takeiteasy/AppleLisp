@@ -1,3 +1,4 @@
+#if APLL_NATIVE
 import JavaScriptCore
 import AppKit
 
@@ -201,3 +202,5 @@ public struct InteractionAPI: NativeAPIProvider {
         return api
     }
 }
+
+#endif

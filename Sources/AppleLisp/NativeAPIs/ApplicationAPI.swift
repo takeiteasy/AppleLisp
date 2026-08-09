@@ -1,3 +1,4 @@
+#if APLL_NATIVE
 import JavaScriptCore
 import ScriptingBridge
 
@@ -101,3 +102,5 @@ public struct ApplicationAPI: NativeAPIProvider {
         return api
     }
 }
+
+#endif

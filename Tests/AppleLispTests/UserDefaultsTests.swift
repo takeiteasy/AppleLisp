@@ -1,3 +1,4 @@
+#if APLL_NATIVE
 import XCTest
 @testable import AppleLisp
 
@@ -15,3 +16,5 @@ final class UserDefaultsTests: AppleLispTestCase {
         XCTAssertTrue(res == "undefined" || res == "nil")
     }
 }
+
+#endif

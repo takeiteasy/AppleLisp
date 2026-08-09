@@ -1,3 +1,4 @@
+#if APLL_NATIVE
 import XCTest
 @testable import AppleLisp
 
@@ -24,3 +25,5 @@ final class APIAvailabilityTests: AppleLispTestCase {
         }
     }
 }
+
+#endif

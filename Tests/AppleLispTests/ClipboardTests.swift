@@ -1,3 +1,4 @@
+#if APLL_NATIVE
 import XCTest
 @testable import AppleLisp
 
@@ -48,3 +49,4 @@ final class ClipboardTests: AppleLispTestCase {
         XCTAssertEqual(try eval("(.getString Clipboard \"\(type)\")"), original)
     }
 }
+#endif

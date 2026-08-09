@@ -1,3 +1,4 @@
+#if APLL_NATIVE
 import XCTest
 @testable import AppleLisp
 
@@ -43,3 +44,5 @@ final class ScriptingBridgeTests: AppleLispTestCase {
         XCTAssertEqual(resultArray, "is-array")
     }
 }
+
+#endif

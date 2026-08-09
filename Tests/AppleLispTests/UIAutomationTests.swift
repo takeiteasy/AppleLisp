@@ -1,3 +1,4 @@
+#if APLL_NATIVE
 import XCTest
 @testable import AppleLisp
 
@@ -31,3 +32,5 @@ final class UIAutomationTests: AppleLispTestCase {
         XCTAssertEqual(res2, "false")
     }
 }
+
+#endif

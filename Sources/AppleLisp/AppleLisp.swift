@@ -87,7 +87,8 @@ public class AppleLisp {
         customAPIs.insert(provider.apiName)
         return jsValue
     }
-    
+
+#if APLL_NATIVE
     /// Register all built-in macOS native APIs and define them as globals
     /// in the Lisp environment. Returns the names of the registered APIs.
     @discardableResult
@@ -118,6 +119,7 @@ public class AppleLisp {
 
         return providers.map { $0.apiName }
     }
+#endif
 
     /// Check if a custom API is registered
     public func hasCustomAPI(name: String) -> Bool {

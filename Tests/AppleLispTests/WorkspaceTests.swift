@@ -1,3 +1,4 @@
+#if APLL_NATIVE
 import XCTest
 @testable import AppleLisp
 
@@ -38,3 +39,5 @@ final class WorkspaceTests: AppleLispTestCase {
         XCTAssertTrue(term.contains("Terminal.app"))
     }
 }
+
+#endif

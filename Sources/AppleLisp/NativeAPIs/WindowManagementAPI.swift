@@ -1,3 +1,4 @@
+#if APLL_NATIVE
 import JavaScriptCore
 import CoreGraphics
 import ApplicationServices
@@ -136,3 +137,5 @@ public struct WindowManagementAPI: NativeAPIProvider {
         }
     }
 }
+
+#endif
