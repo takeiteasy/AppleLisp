@@ -1,8 +1,46 @@
-# KeyBinding API
+# REPL Features: Cron and KeyBinding
+
+Beyond the 12 core native APIs shipped with the AppleLisp library, the `apll`
+executable registers two additional APIs that are specific to the REPL and
+daemon. They are defined as Lisp globals (`Cron`, `KeyBinding`) and are also
+available via `require`, but they are not part of the `AppleLisp` library
+itself.
+
+## Cron API
+
+Schedule recurring tasks using cron expressions.
+
+### API Reference
+
+| Method | Description |
+|--------|-------------|
+| `(.schedule expression callback)` | Schedule a job with a standard 5-field cron expression. Returns a job ID string. |
+| `(.unschedule id)` | Cancel a scheduled job by its ID. |
+| `(.list)` | List all scheduled jobs with their IDs, expressions, and last run times. |
+
+### Examples
+
+```clojure
+(def Cron (require "macos/Cron"))
+
+;; Schedule a job every 5 minutes
+(def jobId (.schedule Cron "*/5 * * * *" (fn []
+  (print "Cron job executed: 5 minute mark"))))
+
+;; List scheduled jobs
+(print (.list Cron))
+
+;; Unschedule the job
+(.unschedule Cron jobId)
+```
+
+The scheduler ticks at the start of every minute. Standard cron syntax is supported: `*`, ranges (`1-5`), steps (`*/5`), comma-separated lists (`1,3,5`), and combinations.
+
+## KeyBinding API
 
 Emacs-style multi-key sequence capture and dispatch via `CGEventTap`.
 
-## API Reference
+### API Reference
 
 | Method | Description |
 |--------|-------------|
@@ -23,7 +61,7 @@ Emacs-style multi-key sequence capture and dispatch via `CGEventTap`.
 | `(.parseNotation notation)` | Parse a notation string into its components (for debugging). |
 | `(.setTimeout seconds)` | Set an auto-timeout. Default is `0` (wait indefinitely). |
 
-## Key Notation
+### Key Notation
 
 Bindings use Emacs-style string notation:
 
@@ -36,18 +74,18 @@ Bindings use Emacs-style string notation:
 | `C-M-x` | Control + Option + x |
 | `C-x C-f` | Sequence of `C-x` followed by `C-f` |
 
-### Modifiers
+#### Modifiers
 
 - `C`, `CTRL`, `CONTROL` — Control
 - `M`, `META`, `ALT`, `OPT`, `OPTION` — Option/Meta
 - `S`, `SHIFT` — Shift
 - `CMD`, `COMMAND`, `SUPER` — Command
 
-### Special Keys
+#### Special Keys
 
 `return`, `tab`, `space`, `backspace`, `escape`, `delete`, `home`, `end`, `pageup`, `pagedown`, `left`, `right`, `down`, `up`, `f1`–`f12`
 
-## Examples
+### Examples
 
 ```clojure
 (def KeyBinding (require "macos/KeyBinding"))

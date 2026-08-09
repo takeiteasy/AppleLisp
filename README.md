@@ -4,20 +4,18 @@ AppleScript really sucks. I don't like it. AppleLisp is a Clojure-like Lisp dial
 
 The package ships two things:
 
-- **`AppleLisp` library** — the interpreter core, a `NativeAPIProvider` protocol for native APIs, and 14 built-in macOS native APIs (FileManager, Process, Clipboard, Workspace, Application, Notification, UIAutomation, InputSimulation, SystemControl, WindowManagement, Interaction, UserDefaults, KeyBinding, Cron).
-- **`apll`** — an interactive REPL with history and `:load`/`:help` commands. With the `--daemon` flag it runs as a keyboard-driven daemon for Emacs-style global keybinding control (via `CGEventTap`), scripted in Wisp.
+- **`AppleLisp` library** — the interpreter core, a `NativeAPIProvider` protocol for native APIs, and 12 built-in macOS native APIs (FileManager, Process, Clipboard, Workspace, Application, Notification, UIAutomation, InputSimulation, SystemControl, WindowManagement, Interaction, UserDefaults).
+- **`apll`** — an interactive REPL with history and `:load`/`:help` commands. With the `--daemon` flag it runs as a keyboard-driven daemon for Emacs-style global keybinding control (via `CGEventTap`), scripted in Wisp. It also registers the Cron and KeyBinding APIs, which are REPL/daemon features rather than part of the library.
 
 ## Native APIs
 
-All 14 native APIs are documented individually in [`docs/`](docs/):
+All 12 native APIs are documented individually in [`docs/`](docs/):
 
 - [Application](docs/Application.md) (ScriptingBridge)
 - [Clipboard](docs/Clipboard.md)
-- [Cron](docs/Cron.md)
 - [FileManager](docs/FileManager.md)
 - [InputSimulation](docs/InputSimulation.md)
 - [Interaction](docs/Interaction.md)
-- [KeyBinding](docs/KeyBinding.md)
 - [Notification](docs/Notification.md)
 - [Process](docs/Process.md)
 - [SystemControl](docs/SystemControl.md)
@@ -27,6 +25,15 @@ All 14 native APIs are documented individually in [`docs/`](docs/):
 - [Workspace](docs/Workspace.md)
 
 See [docs/AppleScript.md](docs/AppleScript.md) for the AppleScript integration notes.
+
+## REPL features
+
+Beyond the 12 core native APIs, `apll` registers two additional APIs that are
+specific to the REPL and daemon: [Cron](docs/REPL.md) (recurring tasks) and
+[KeyBinding](docs/REPL.md) (Emacs-style global key sequences). They are defined
+as Lisp globals (`Cron`, `KeyBinding`) and are also available via `require`, but
+they are not part of the AppleLisp library itself. See
+[docs/REPL.md](docs/REPL.md) for their documentation.
 
 ## Adding custom native APIs
 
@@ -87,7 +94,7 @@ swift run apll
 
 `apll --daemon` runs as a keyboard-driven daemon that captures global key events (via
 `CGEventTap`) and dispatches Emacs-style multi-key sequences bound with the
-[KeyBinding](docs/KeyBinding.md) API. It requires Accessibility permissions at runtime.
+[KeyBinding](docs/REPL.md) API. It requires Accessibility permissions at runtime.
 
 On startup it registers a set of example bindings scripted in Wisp:
 

@@ -20,7 +20,7 @@ AppleScript accesses macOS-native functionality through the `require("macos/X")`
 (def fm (require "macos/FileManager"))
 ```
 
-The `require` hook intercepts the `macos/` prefix, looks up the API name in a registry of `NativeAPIProvider` implementations, and returns a JavaScript object whose methods are backed by native Swift code. This is how AppleLisp exposes all 14 of its native APIs (Clipboard, WindowManagement, KeyBinding, etc.) to your scripts.
+The `require` hook intercepts the `macos/` prefix, looks up the API name in a registry of `NativeAPIProvider` implementations, and returns a JavaScript object whose methods are backed by native Swift code. This is how AppleLisp exposes its native APIs (Clipboard, WindowManagement, etc.) to your scripts.
 
 See the [API docs](.) for the full list of available macOS APIs.
 

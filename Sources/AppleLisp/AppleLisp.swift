@@ -104,9 +104,7 @@ public class AppleLisp {
             UIAutomationAPI.self,
             InputSimulationAPI.self,
             SystemControlAPI.self,
-            WindowManagementAPI.self,
-            KeyBindingAPI.self,
-            CronAPI.self
+            WindowManagementAPI.self
         ]
 
         for provider in providers {

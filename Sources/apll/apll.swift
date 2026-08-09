@@ -4,6 +4,33 @@ import CEditline
 import ArgumentParser
 import JavaScriptCore
 
+// MARK: - apll-specific API registration
+
+extension AppleLisp {
+    /// Register the apll-specific native APIs (Cron, KeyBinding) on top of the
+    /// core APIs from `registerAllNativeAPIs()` and define them as Lisp globals.
+    func registerREPLNativeAPIs() throws {
+        let providers: [NativeAPIProvider.Type] = [
+            CronAPI.self,
+            KeyBindingAPI.self
+        ]
+        for provider in providers {
+            registerCustomAPI(provider)
+        }
+        let defs = providers
+            .map { "(def \($0.apiName) (get __macos_apis \"\($0.apiName)\"))" }
+            .joined(separator: "\n")
+        try evaluate(source: defs)
+    }
+
+    static func makeLisp() throws -> AppleLisp {
+        let lisp = try AppleLisp()
+        try lisp.registerAllNativeAPIs()
+        try lisp.registerREPLNativeAPIs()
+        return lisp
+    }
+}
+
 // MARK: - CLI
 
 @main
@@ -37,8 +64,7 @@ struct APLL: ParsableCommand {
         
         let lisp: AppleLisp
         do {
-            lisp = try AppleLisp()
-            try lisp.registerAllNativeAPIs()
+            lisp = try AppleLisp.makeLisp()
         } catch {
             fputs("Error: Failed to initialize AppleLisp: \(error.localizedDescription)\n", stderr)
             throw ExitCode.failure
@@ -98,8 +124,7 @@ extension APLL {
     func runDaemon() throws {
         let lisp: AppleLisp
         do {
-            lisp = try AppleLisp()
-            try lisp.registerAllNativeAPIs()
+            lisp = try AppleLisp.makeLisp()
         } catch {
             fputs("Error: Failed to initialize AppleLisp: \(error.localizedDescription)\n", stderr)
             throw ExitCode.failure

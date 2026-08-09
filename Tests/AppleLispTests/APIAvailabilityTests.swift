@@ -15,9 +15,7 @@ final class APIAvailabilityTests: AppleLispTestCase {
             "UIAutomation",
             "InputSimulation",
             "SystemControl",
-            "WindowManagement",
-            "KeyBinding",
-            "Cron"
+            "WindowManagement"
         ]
         
         for api in apis {
