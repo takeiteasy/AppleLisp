@@ -3,6 +3,27 @@
 The package can be built in two configurations: **core-only** (wisp + JavaScriptCore)
 and **full** (core plus the macOS native APIs and the apll daemon).
 
+## Makefile
+
+A `Makefile` at the repo root wraps the two configurations. The default target builds
+the full native configuration in release mode; `make core` builds core-only:
+
+```bash
+make          # full native build (release)
+make core     # core-only build
+make install  # full native build, then install apll to ~/.local/bin
+make uninstall
+make test     # run tests in both configurations
+```
+
+`make install` installs the `apll` binary to `~/.local/bin` (no `sudo` needed). To
+override the install location or configuration:
+
+```bash
+make install PREFIX=/usr/local
+make CONFIG=debug
+```
+
 ## Core-only (default)
 
 A plain `swift build` produces a library that is just the wisp compiler/`JSContext`

@@ -1,6 +1,8 @@
 # AppleLisp
 
-AppleScript really sucks. I don't like it. AppleLisp is a Clojure-like Lisp dialect for JavaScriptCore. macOS includes the `JavaScriptCore.framework`, so to save a lot of time and reinventing the wheel we use [wisp](https://github.com/wisp-lang/wisp) that transpiles to JavaScript. AppleLisp wraps the wisp compiler and a `JSContext` to give you a Lisp REPL/evaluator, plus a protocol for exposing native Swift APIs to Lisp code.
+> **WARNING!** Work in progress
+
+A scripting engine for macOS using JavaScriptCore and [a fork of wisp](https://github.com/takeiteasy/wisp) (only updated dependencies and modifed the build a bit). Optional native macOS API bindings are provided.
 
 The package ships two things:
 
